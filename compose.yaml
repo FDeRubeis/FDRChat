@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: fdrchat
+      POSTGRES_PASSWORD: fdrchat
+      POSTGRES_DB: fdrchat
+    tmpfs: # in-memory data directory: data does nor persist across restarts
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U fdrchat -d fdrchat"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  api:
+    build: .
+    pull_policy: build
+    environment:
+      DATABASE_URL: postgres://fdrchat:fdrchat@db:5432/fdrchat?sslmode=disable
+      HTTP_ADDR: :8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
